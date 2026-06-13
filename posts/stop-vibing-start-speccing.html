@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stop Vibing. Start Speccing. — Harsha Sridhar</title>
+<meta name="description" content="Vibe coding made it cheap to start building. Spec-Driven Development makes it possible to finish. How specs give AI coding agents something real to aim at.">
+<link rel="canonical" href="https://blog.msharsha.com/posts/stop-vibing-start-speccing.html">
+<meta name="author" content="Harsha Sridhar">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stop Vibing. Start Speccing.">
+<meta property="og:description" content="Vibe coding made it cheap to start building. Spec-Driven Development makes it possible to finish.">
+<meta property="og:url" content="https://blog.msharsha.com/posts/stop-vibing-start-speccing.html">
+<meta property="og:image" content="https://blog.msharsha.com/images/cover-stop-vibing.jpg">
+<meta property="article:published_time" content="2026-05-14">
+<meta property="article:author" content="Harsha Sridhar">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="https://msharsha.com/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="https://msharsha.com/apple-touch-icon.png">
+<link rel="alternate" type="application/rss+xml" title="Harsha Sridhar — Writing" href="/feed.xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
+<link rel="stylesheet" href="/style.css">
+<script src="/components.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-H9NJDMDFE2"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-H9NJDMDFE2');</script>
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"BlogPosting",
+  "headline":"Stop Vibing. Start Speccing.",
+  "description":"Vibe coding made it cheap to start building. Spec-Driven Development makes it possible to finish.",
+  "datePublished":"2026-05-14",
+  "dateModified":"2026-05-14",
+  "author":{"@type":"Person","name":"Harsha Sridhar","alternateName":"MS Harsha","url":"https://msharsha.com"},
+  "publisher":{"@type":"Person","name":"Harsha Sridhar","url":"https://msharsha.com"},
+  "mainEntityOfPage":"https://blog.msharsha.com/posts/stop-vibing-start-speccing.html",
+  "image":"https://blog.msharsha.com/images/cover-stop-vibing.jpg",
+  "keywords":["Spec-Driven Development","Agentic AI","AI coding agents","Software Engineering"]
+}
+</script>
+</head>
+<body>
+
+<site-header></site-header>
+
+<main class="page">
+
+  <div class="tags">
+    <span class="tag">Software Engineering</span>
+    <span class="tag">Agentic AI</span>
+    <span class="tag">Developer Tools</span>
+  </div>
+
+  <h1>Stop Vibing. Start Speccing.</h1>
+  <p class="subtitle">Vibe coding made it cheap to start building. Spec-Driven Development makes it possible to finish.</p>
+
+  <div class="byline">
+    <div class="avatar">HS</div>
+    <div>
+      <div class="who">Harsha Sridhar</div>
+      <div class="meta">8 min read · May 14, 2026</div>
+    </div>
+  </div>
+
+  <p class="crosspost">A shorter version of this piece is on <a href="https://medium.com/@msharsha" target="_blank" rel="noopener">Medium</a>. This is the full article.</p>
+
+  <img class="cover" src="/images/cover-stop-vibing.jpg" alt="Stop Vibing. Start Speccing. — Spec-Driven Development for AI coding agents" width="1200" height="630">
+
+  <article>
+
+    <p>There is a moment every developer eventually has with an AI coding agent. You give it a brief, informal prompt. The files start appearing. Routes get wired, migrations get created, components take shape. For a few minutes, you feel like you skipped a full week of work.</p>
+
+    <p>Then your designer asks about the edge case you didn't mention. The agent hardcoded something you intended to be configurable. Your data model uses <code>QuoteSummary</code> in the frontend and <code>ProjectEstimate</code> in the backend. The tests pass, but only because they don't really test anything.</p>
+
+    <p>The code was confident. It just wasn't correct.</p>
+
+    <p>This is the failure mode that <strong>Spec-Driven Development (SDD)</strong> is designed to prevent — not by slowing agents down, but by giving them something real to aim at before they start swinging.</p>
+
+    <div class="divider">* * *</div>
+
+    <h2>The problem isn't the model</h2>
+
+    <p>Here is the thing that gets missed in every "vibe coding is dead" hot take: the model isn't the issue. The issue is that AI agents are very good at producing <em>plausible</em> output, and plausible is not the same as correct.</p>
+
+    <p>When you say "build me a renovation tracker," the agent doesn't stop and ask whether projects can exist without photos, whether estimates should be editable, or what happens when the AI generation fails. It fills in those blanks itself. Quietly. Confidently. Wrong.</p>
+
+    <div class="pull-quote">
+      The better the agent gets at execution, the more leverage your instructions carry — and the more expensive misdirection becomes.
+    </div>
+
+    <p>There's also the context decay problem. AI agents are stateless. Every new chat window starts fresh. On a large project with multiple developers and multiple sessions, you lose the thread. Why was the data cleaned that way? Why was that approach rejected? The code remembers nothing; neither does the agent.</p>
+
+    <p>Andrej Karpathy, who coined the phrase "vibe coding" back in early 2025, said it plainly a year later: the era of vibe coding is already ending. What comes next is what he called <strong>agentic engineering</strong> — orchestrating agents against detailed specifications, with human oversight still firmly in the loop.</p>
+
+    <p>SDD is how you do that orchestration.</p>
+
+    <div class="divider">* * *</div>
+
+    <h2>What SDD actually is</h2>
+
+    <p>Spec-Driven Development is a workflow where every meaningful feature starts as a written artifact <em>before</em> it becomes code. Not a 40-page requirements document. Not a frozen spec nobody opens after kickoff. A living source of truth — scoped, readable, and stored in your repository alongside the code it governs.</p>
+
+    <p>The mental shift is simple: <strong>the spec is the primary artifact, and code is what gets generated from it.</strong> Think of it the way you think about source files and compiled binaries. You maintain the source. The output follows.</p>
+
+    <p>A useful spec addresses seven things: the user problem, the primary user, the happy path, the edge cases, the constraints, what "done" means, and how you'll verify it. Notice what's missing: every implementation detail. The spec constrains the problem space. The agent is creative within it.</p>
+
+    <div class="divider">* * *</div>
+
+    <h2>The workflow</h2>
+
+    <p>A spec-driven workflow runs through four distinct phases. The separation between them is the point — each has a different kind of thinking, and mixing them is where things break.</p>
+
+    <figure>
+      <div class="inline-diagram">
+        <svg width="100%" viewBox="0 0 640 310" role="img" xmlns="http://www.w3.org/2000/svg">
+          <title>SDD workflow: four phases from brief to validation</title>
+          <desc>Left-to-right flow: Brief, Spec, Build, Validate, with a replan feedback loop underneath.</desc>
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#9a9aa3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </marker>
+          </defs>
+          <rect x="20" y="90" width="130" height="120" rx="6" fill="#efeefc" stroke="#5b50d6" stroke-width="1"/>
+          <text x="85" y="120" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#5b50d6">01 · Brief</text>
+          <text x="85" y="140" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">Clarify intent.</text>
+          <text x="85" y="156" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">Ask questions</text>
+          <text x="85" y="172" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">before touching</text>
+          <text x="85" y="188" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">any code.</text>
+          <line x1="152" y1="150" x2="185" y2="150" stroke="#9a9aa3" stroke-width="1.2" marker-end="url(#arr)"/>
+          <rect x="187" y="90" width="130" height="120" rx="6" fill="#f6f6fb" stroke="#9a9aa3" stroke-width="0.8"/>
+          <text x="252" y="120" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#1f1f24">02 · Spec</text>
+          <text x="252" y="140" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">Write spec.md.</text>
+          <text x="252" y="156" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">Users, flows,</text>
+          <text x="252" y="172" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">criteria and</text>
+          <text x="252" y="188" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">constraints.</text>
+          <line x1="319" y1="150" x2="352" y2="150" stroke="#9a9aa3" stroke-width="1.2" marker-end="url(#arr)"/>
+          <rect x="354" y="90" width="130" height="120" rx="6" fill="#f6f6fb" stroke="#9a9aa3" stroke-width="0.8"/>
+          <text x="419" y="120" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#1f1f24">03 · Build</text>
+          <text x="419" y="140" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">Agent plans,</text>
+          <text x="419" y="156" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">then codes.</text>
+          <text x="419" y="172" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">Spec is the</text>
+          <text x="419" y="188" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">working memory.</text>
+          <line x1="486" y1="150" x2="519" y2="150" stroke="#9a9aa3" stroke-width="1.2" marker-end="url(#arr)"/>
+          <rect x="521" y="90" width="100" height="120" rx="6" fill="#f6f6fb" stroke="#9a9aa3" stroke-width="0.8"/>
+          <text x="571" y="120" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#1f1f24">04</text>
+          <text x="571" y="136" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="#1f1f24">Validate</text>
+          <text x="571" y="158" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">Review vs.</text>
+          <text x="571" y="174" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">acceptance</text>
+          <text x="571" y="190" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#5c5c66">criteria.</text>
+          <path d="M571 212 Q571 268 419 268 Q265 268 85 268 Q85 242 85 212" fill="none" stroke="#9a9aa3" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+          <text x="330" y="262" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#9a9aa3">↻ replan after each feature</text>
+          <text x="85" y="78" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#9a9aa3">human thinking</text>
+          <text x="252" y="78" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#9a9aa3">human + agent</text>
+          <text x="419" y="78" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#9a9aa3">agent-led</text>
+          <text x="571" y="78" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#9a9aa3">human review</text>
+        </svg>
+      </div>
+      <figcaption>The four phases of SDD — and the replan loop that keeps long projects on track.</figcaption>
+    </figure>
+
+    <p>The first phase, the <strong>brief</strong>, is where most of the valuable work happens. Instead of sending the agent straight to implementation, you use it as a thinking partner first. Ask it to interview the idea: what architectural decisions does this require? What edge cases would affect the data model? What does "done" look like?</p>
+
+    <p>Those questions aren't overhead. They're hidden architecture. If users can create a project without uploading photos, your data model changes. If estimates are editable after generation, your permission model changes. Getting these answers before writing code is essentially free. Getting them after is expensive.</p>
+
+    <p>The second phase produces a <code>spec.md</code> file — a plain markdown document that lives in your repository and answers those questions in writing. Only then does the agent plan and build. Anthropic's own guidance on Claude Code recommends explicitly separating exploration from implementation for exactly this reason: jumping straight to code solves the wrong problem at the wrong speed.</p>
+
+    <p>The fourth phase — validation — checks the output against the acceptance criteria you wrote before the agent started. That order matters. Write the criteria <em>after</em> seeing the code, and you're just rationalizing what the agent built. Write them first, and they become a real gate.</p>
+
+    <div class="divider">* * *</div>
+
+    <h2>What a spec actually looks like</h2>
+
+    <p>Specs are often described in ways that make them sound heavier than they are. Here's a minimal, honest version — the kind you'd actually write for a real feature:</p>
+
+<pre><code># Renovation assistant
+
+## Goal
+Help homeowners turn rough renovation ideas into structured
+project plans with editable summaries and rough cost ranges.
+
+## Primary user
+A homeowner planning a small-to-medium room renovation.
+
+## Core flow
+1. User creates a project (title + description required).
+2. User optionally uploads room photos (JPEG, PNG).
+3. System generates a structured plan with cost ranges.
+4. User can edit generated content before saving.
+5. User can return to saved projects later.
+
+## Constraints
+- Project creation must not block on AI generation.
+- Cost estimates are stored as ranges, not exact values.
+- Failed uploads must show a recoverable error.
+
+## Acceptance criteria
+- User can create a project with no photos.
+- User can upload multiple supported images.
+- User can edit generated content before saving.
+- Tests cover: missing photos, failed uploads, editable estimates.
+
+## Open questions
+- Should estimates be exportable as PDF?
+- Will contractors need a separate view later?</code></pre>
+
+    <p>This document is small, but it changes everything about what happens next. The agent isn't inferring the product anymore — it has a contract. A reviewer can challenge the acceptance criteria. A tester can turn edge cases into test cases. A new teammate six months from now can understand why the code exists.</p>
+
+    <p>Critically, it also survives across sessions. When the context window resets, the agent re-reads the spec and picks up exactly where things left off — without re-explaining the entire product from scratch.</p>
+
+    <div class="divider">* * *</div>
+
+    <h2>Isn't this just waterfall?</h2>
+
+    <p>Yes, people are saying this. The analogy isn't wrong, but it's incomplete.</p>
+
+    <p>Waterfall failed because specs froze early and stayed frozen. The world changed, the code changed, and the document became a historical artifact that nobody updated. SDD specs are supposed to evolve alongside the code — committed to the repo and updated after every feature cycle, not archived after kickoff.</p>
+
+    <p>The replan loop in the diagram above is the difference. After implementing each feature, you pause and look back at the spec. Does it still reflect reality? Do the architectural decisions still hold? This is closer to how agile retrospectives work, applied to documentation instead of process.</p>
+
+    <div class="divider">* * *</div>
+
+    <h2>The real question</h2>
+
+    <p>The question isn't whether to write specs — it's at what point in the process you want to do your hard thinking.</p>
+
+    <p>Vibe coding defers the thinking. You discover what you actually needed when you see what the agent built. That's fine for a prototype with no future. For anything that has to survive contact with real users, real edge cases, and real teammates, deferring the thinking means you're borrowing against yourself.</p>
+
+    <p>SDD front-loads the thinking into a document instead of distributing it across a series of correction prompts. The spec is the map. The agent still does the flying.</p>
+
+    <div class="pull-quote">
+      The agents aren't slowing down. Getting better at directing them is the only lever you have.
+    </div>
+
+  </article>
+
+  <div class="refs">
+    <h4>References</h4>
+    <ul>
+      <li>GitHub. (2025). <a href="https://github.com/github/spec-kit/blob/main/spec-driven.md" target="_blank" rel="noopener">Spec-Kit: Spec-Driven Development</a>. github/spec-kit.</li>
+      <li>Thoughtworks. (2025). <a href="https://www.thoughtworks.com/en-us/insights/blog/agile-engineering-practices/spec-driven-development-unpacking-2025-new-engineering-practices" target="_blank" rel="noopener">Spec-Driven Development: Unpacking One of 2025's Key New Practices</a>.</li>
+      <li>Anthropic. (2025). <a href="https://www.anthropic.com/engineering" target="_blank" rel="noopener">Claude Code: Best Practices for Agentic Coding</a>. Anthropic Engineering.</li>
+    </ul>
+  </div>
+
+  <div class="endcta">
+    <div class="h">Enjoyed this?</div>
+    <p>I write about distributed systems, agentic AI, and the strange places engineering and the cosmos overlap.</p>
+    <div class="btns">
+      <a class="btn primary" href="/">Read more articles</a>
+      <a class="btn" href="https://www.linkedin.com/in/harsha-sridhar/" target="_blank" rel="noopener">Connect on LinkedIn</a>
+    </div>
+  </div>
+
+</main>
+
+<site-footer></site-footer>
+
+</body>
+</html>
