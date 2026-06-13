@@ -1,0 +1,57 @@
+Copyright © 2026 Harsha Sridhar. All rights reserved.
+
+This license covers the contents of blog.msharsha.com (the "Site"), authored and
+owned by Harsha Sridhar ("the Author").
+
+
+1. CONTENT — All Rights Reserved
+
+All written articles, essays, text, headlines, images, cover art, illustrations,
+diagrams, the visual design, and the layout of the Site are the original work of
+the Author and are protected by copyright. They may NOT be copied, reproduced,
+republished, redistributed, mirrored, translated, used to train machine-learning
+models, or adapted into derivative works — in whole or in part, in any medium —
+without the Author's prior written permission.
+
+
+2. PERMITTED USE
+
+You may, without prior permission:
+
+  - Read, link to, and share links to articles on the Site.
+  - Quote brief excerpts (a few sentences) for the purposes of commentary,
+    criticism, news reporting, or review, provided you give clear attribution
+    to "Harsha Sridhar" and include a link back to the original article.
+
+These permissions do not extend to reproducing entire articles or substantial
+portions of them.
+
+
+3. CODE SAMPLES — MIT License
+
+Notwithstanding Section 1, any source-code snippets and examples embedded within
+the articles (e.g. code blocks) are released under the MIT License below, so that
+readers may freely use them:
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of the code samples published on this Site, to deal in them without
+    restriction, including without limitation the rights to use, copy, modify,
+    merge, publish, distribute, sublicense, and/or sell copies, subject to the
+    following: the above copyright notice and this permission notice shall be
+    included in all substantial copies. THE CODE IS PROVIDED "AS IS", WITHOUT
+    WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+    WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM,
+    DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF THE CODE.
+
+
+4. TRADEMARKS & NAME
+
+"Harsha Sridhar", "MS Harsha", and the "HS" mark/logo are identifiers of the
+Author and may not be used to imply endorsement or authorship without permission.
+
+
+5. CONTACT
+
+For licensing requests or permission to reuse content beyond what is allowed
+above, contact the Author via https://msharsha.com.
