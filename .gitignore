@@ -1,0 +1,17 @@
+.DS_Store
+*.DS_Store
+Thumbs.db
+
+# Generated cover derivatives — rebuilt by scripts/build-images.py at deploy time.
+# Only the source covers (images/cover-<slug>.jpg|png) are committed.
+/images/*.webp
+/images/*-[0-9]*.jpg
+
+# Generated HTML — rebuilt from /content by scripts/build-site.py at deploy time.
+# Source of truth is /content/*.md + the templates in build-site.py.
+/index.html
+/posts/
+/sitemap.xml
+/feed.xml
+# Superseded by /content + scripts/build-site.py
+/post-template.html

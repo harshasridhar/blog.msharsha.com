@@ -1,8 +1,13 @@
 # blog.msharsha.com
 
-A hand-built static blog. No build step, no generator. Long-form reading layout
-(serif body, narrow column) with Harsha Sridhar's own branding — **not** a clone
-of any platform.
+A static blog with Harsha Sridhar's own branding — **not** a clone of any
+platform. Long-form reading layout: serif body, narrow column, light/dark themes.
+
+**You write posts in Markdown.** A tiny zero-dependency generator
+(`scripts/build-site.py`) turns each `content/*.md` file into the post HTML, and
+regenerates the index, sitemap, and RSS feed. Images are optimized by
+`scripts/build-images.py`. Both run automatically on deploy via GitHub Actions,
+so the repo holds only sources (Markdown + covers + CSS/JS) — never generated HTML.
 
 ## This is a SEPARATE site from the portfolio
 
@@ -14,32 +19,47 @@ guards against that.)
 
 ## Files
 
+### Sources (committed)
+
 | File | What it is |
 |------|------------|
-| `index.html` | Article list. Add a `<li class="post-card">` block per new post. |
-| `posts/*.html` | One file per article. |
-| `post-template.html` | Copy this to start a new post; fill in the `EDIT` markers. |
+| `content/*.md` | **Your posts.** One Markdown file per article (frontmatter + body). |
+| `content/_template.md` | Starter to copy for a new post (the `_` prefix means the build skips it). |
+| `images/cover-<slug>.jpg` | One source cover per post (any size). |
 | `style.css` | Shared reading theme. |
-| `components.js` | `<site-header>` / `<site-footer>` web components — edit chrome here once. |
-| `sitemap.xml`, `feed.xml`, `robots.txt` | SEO + RSS. Add an entry when you publish. |
-| `CNAME` | Tells GitHub Pages the custom domain. |
+| `components.js` | `<site-header>` / `<site-footer>` web components + theme toggle — edit chrome here once. |
+| `scripts/build-site.py` | Renders Markdown → HTML, index, sitemap, feed. No dependencies. |
+| `scripts/build-images.py` | Turns each source cover into responsive WebP + JPG. |
+| `robots.txt`, `CNAME`, `LICENSE.txt`, `THUMBNAIL-PROMPT.md` | Static. |
+| `.github/workflows/deploy.yml` | Runs both build scripts, then deploys to Pages on every push. |
+
+### Generated (git-ignored, rebuilt on deploy)
+
+`index.html`, `posts/*.html`, `sitemap.xml`, `feed.xml`, and the image
+derivatives (`images/*-480/800/1200.webp`, `-1200.jpg`).
 
 ## Publishing a new post
 
-1. `cp post-template.html posts/your-slug.html`
-2. Replace every `EDIT` marker (title, description, canonical URL, date, slug, JSON-LD).
-3. Write the article inside `<article>` using the building blocks: `<h2>`, `<p>`,
-   `.pull-quote`, `<figure>`, `<pre><code>`, `.divider`, `.refs`.
-4. Add a `<li class="post-card">` to `index.html` (newest on top).
-5. Add `<url>` to `sitemap.xml` and an `<item>` to `feed.xml`.
-6. Commit + push. Done.
+1. `cp content/_template.md content/your-slug.md`
+2. Fill in the frontmatter (title, subtitle, tags, category, readTime, publishDate,
+   `medium` link, `cover`) and write the body in Markdown.
+3. Save a cover at `images/cover-your-slug.jpg` and set `cover: cover-your-slug`
+   in the frontmatter.
+4. Commit + push. The Action builds the HTML + images, regenerates the index /
+   sitemap / feed, and deploys. **That's the whole workflow — one Markdown file.**
+
+### Markdown → components
+
+`##`/`###` → section headings · blank-line text → paragraphs · `>` → pull-quote ·
+` ``` ` fenced → code panel · `* * *` or `---` → divider · `- ` / `1. ` → lists ·
+`![alt](src)` → figure with caption · raw HTML blocks pass through untouched.
 
 ## Deploy (one-time setup)
 
 1. Create a new GitHub repo, e.g. `harshasridhar/blog`.
 2. Push these files to `main`.
-3. Repo → **Settings → Pages** → Source: *Deploy from a branch* → `main` / root.
-   (Pure static — no GitHub Action needed.)
+3. Repo → **Settings → Pages** → Source: **GitHub Actions** (the included
+   `deploy.yml` builds the images, then publishes — *not* "Deploy from a branch").
 4. Set custom domain to `blog.msharsha.com` (the `CNAME` file already declares it).
 5. **DNS** at your registrar: add a `CNAME` record
    `blog` → `harshasridhar.github.io` (your Pages host). Wait for it to resolve,
@@ -47,11 +67,14 @@ guards against that.)
 
 ## Local preview
 
-`file://` won't resolve the root-absolute paths (`/style.css`), so run a tiny server:
+Run both build scripts once (outputs are git-ignored), then serve — `file://`
+won't resolve the root-absolute paths (`/style.css`):
 
 ```
-cd blog && python3 -m http.server 8000
-# open http://localhost:8000
+cd blog
+python3 scripts/build-images.py    # needs: pip install Pillow
+python3 scripts/build-site.py      # no dependencies
+python3 -m http.server 8000        # open http://localhost:8000
 ```
 
 ## SEO notes
