@@ -15,3 +15,6 @@ Thumbs.db
 /feed.xml
 # Superseded by /content + scripts/build-site.py
 /post-template.html
+
+# Medium teaser drafts — not part of the published site
+/drafts/

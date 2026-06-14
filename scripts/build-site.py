@@ -95,7 +95,22 @@ def _is_block(line):
             or re.match(r"^(\*\s*\*\s*\*|-{3,}|\*{3,})\s*$", line)
             or line.startswith(">") or re.match(r"^(\-|\*|\+)\s+", line)
             or re.match(r"^\d+\.\s+", line) or line.lstrip().startswith("<")
+            or line.lstrip().startswith("|")
             or re.match(r"^!\[[^\]]*\]\([^)]+\)\s*$", line))
+
+def _is_sep_row(line):
+    cells = [c.strip() for c in line.strip().strip("|").split("|")]
+    return bool(cells) and any(cells) and all(re.match(r"^:?-{1,}:?$", c) for c in cells if c)
+
+def _table_align(cell):
+    c = cell.strip()
+    if c.startswith(":") and c.endswith(":"):
+        return "center"
+    if c.endswith(":"):
+        return "right"
+    if c.startswith(":"):
+        return "left"
+    return ""
 
 def render_markdown(md):
     lines = md.split("\n")
@@ -130,6 +145,18 @@ def render_markdown(md):
                 i += 1
             tag = "ol" if ordered else "ul"
             out.append(f"<{tag}>" + "".join(items) + f"</{tag}>")
+        elif "|" in line and i + 1 < n and _is_sep_row(lines[i + 1]):
+            header = [c.strip() for c in line.strip().strip("|").split("|")]
+            aligns = [_table_align(c) for c in lines[i + 1].strip().strip("|").split("|")]
+            i += 2
+            rows = []
+            while i < n and "|" in lines[i] and lines[i].strip():
+                rows.append([c.strip() for c in lines[i].strip().strip("|").split("|")])
+                i += 1
+            al = lambda j: f' style="text-align:{aligns[j]}"' if j < len(aligns) and aligns[j] else ""
+            thead = "<thead><tr>" + "".join(f"<th{al(j)}>{_inline(h)}</th>" for j, h in enumerate(header)) + "</tr></thead>"
+            tbody = "".join("<tr>" + "".join(f"<td{al(j)}>{_inline(c)}</td>" for j, c in enumerate(r)) + "</tr>" for r in rows)
+            out.append(f'<div class="table-wrap"><table>{thead}<tbody>{tbody}</tbody></table></div>')
         elif line.lstrip().startswith("<"):
             block = []
             while i < n and lines[i].strip() != "":
@@ -287,8 +314,10 @@ POST_TEMPLATE = """<!DOCTYPE html>
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
 <link rel="stylesheet" href="/style.css">
 <script src="/components.js"></script>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-H9NJDMDFE2"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-H9NJDMDFE2');</script>
+<script>
+window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+if(!/^(localhost|127\\.0\\.0\\.1|::1|\\[::1\\])$/.test(location.hostname)&&location.protocol!=='file:'){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-H9NJDMDFE2';document.head.appendChild(s);gtag('js',new Date());gtag('config','G-H9NJDMDFE2');}
+</script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BlogPosting","headline":"{{TITLE}}","description":"{{DESCRIPTION}}","datePublished":"{{PUBLISHED}}","dateModified":"{{PUBLISHED}}","author":{"@type":"Person","name":"Harsha Sridhar","alternateName":"MS Harsha","url":"https://msharsha.com"},"publisher":{"@type":"Person","name":"Harsha Sridhar","url":"https://msharsha.com"},"mainEntityOfPage":"https://blog.msharsha.com/posts/{{SLUG}}.html","image":"{{OG_IMAGE}}","keywords":{{KEYWORDS}}}
 </script>
@@ -376,8 +405,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&display=swap"></noscript>
 <link rel="stylesheet" href="/style.css">
 <script src="/components.js"></script>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-H9NJDMDFE2"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-H9NJDMDFE2');</script>
+<script>
+window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+if(!/^(localhost|127\\.0\\.0\\.1|::1|\\[::1\\])$/.test(location.hostname)&&location.protocol!=='file:'){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-H9NJDMDFE2';document.head.appendChild(s);gtag('js',new Date());gtag('config','G-H9NJDMDFE2');}
+</script>
 </head>
 <body>
 
