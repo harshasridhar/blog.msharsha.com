@@ -280,7 +280,7 @@ POST_TEMPLATE = """<!DOCTYPE html>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="https://msharsha.com/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="https://msharsha.com/apple-touch-icon.png">
-<link rel="alternate" type="application/rss+xml" title="Harsha Sridhar — Writing" href="/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="Harsha Sridhar — Blog" href="/feed.xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'">
@@ -386,9 +386,9 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <main>
 
   <div class="masthead">
-    <p class="eyebrow">Essays &amp; field notes</p>
-    <h1>Code, systems &amp; cosmos.</h1>
-    <p>Full pieces live here. Shorter versions go out on Medium.</p>
+    <p class="eyebrow">Field notes</p>
+    <h1>The universe is a distributed system with no documentation.</h1>
+    <p>Essays on software, agentic AI, and the physics of scale — from an engineer who keeps asking why.</p>
   </div>
 
   <ul class="feed">
