@@ -356,20 +356,20 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>(function(){try{var s=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',(s==='light'||s==='dark')?s:(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));}catch(e){}})();</script>
-<title>Writing — Harsha Sridhar</title>
+<title>Blog — Harsha Sridhar</title>
 <meta name="description" content="Essays on distributed systems, agentic AI, and engineering by Harsha Sridhar (MS Harsha), Senior Software Engineer at Roku.">
 <link rel="canonical" href="https://blog.msharsha.com/">
 <meta name="author" content="Harsha Sridhar">
 <meta name="copyright" content="© 2026 Harsha Sridhar. All rights reserved.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Writing — Harsha Sridhar">
+<meta property="og:title" content="Blog — Harsha Sridhar">
 <meta property="og:description" content="Essays on distributed systems, agentic AI, and engineering.">
 <meta property="og:url" content="https://blog.msharsha.com/">
 <meta property="og:image" content="https://msharsha.com/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="https://msharsha.com/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="https://msharsha.com/apple-touch-icon.png">
-<link rel="alternate" type="application/rss+xml" title="Harsha Sridhar — Writing" href="/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="Harsha Sridhar — Blog" href="/feed.xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
@@ -408,7 +408,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 FEED_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Harsha Sridhar — Writing</title>
+    <title>Harsha Sridhar — Blog</title>
     <link>https://blog.msharsha.com/</link>
     <description>Essays on distributed systems, agentic AI, and engineering.</description>
     <language>en-us</language>
