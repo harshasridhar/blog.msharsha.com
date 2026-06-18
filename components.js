@@ -19,7 +19,7 @@ class SiteHeader extends HTMLElement {
       <header class="site-header">
         <div class="inner">
           <a class="brand" href="/" aria-label="Harsha Sridhar — home">
-            <span class="mono">H<em>S</em></span>
+            <img class="brand-logo" src="${PORTFOLIO}/icon-192.png" alt="" width="28" height="28" loading="eager" decoding="async">
             <span class="full">Harsha Sridhar</span>
           </a>
           <nav class="nav">

@@ -123,6 +123,7 @@ a:hover{text-decoration:underline}
   background:var(--mono-bg);border:1px solid var(--accent-soft);
 }
 .brand .mono em{color:var(--accent-soft);font-style:normal}
+.brand .brand-logo{width:28px;height:28px;border-radius:7px;flex-shrink:0;display:block;object-fit:cover}
 .nav{display:flex;align-items:center;gap:22px;font-family:var(--sans);font-size:14px}
 .nav a{color:var(--ink-2)}
 .nav a:hover{color:var(--ink);text-decoration:none}
