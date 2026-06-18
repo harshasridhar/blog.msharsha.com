@@ -52,6 +52,42 @@ class SiteHeader extends HTMLElement {
       if (!localStorage.getItem('theme')) { document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light'); render(); }
     });
     render();
+
+    // Auto-hide header on scroll-down, reveal on scroll-up. Medium-style:
+    // gives the reader the full vertical real estate while reading, but keeps
+    // the theme toggle and nav one upward flick away. Stays visible near the
+    // top, and ignores tiny jitter so quick taps don't flicker it.
+    const header = this.querySelector('.site-header');
+
+    // Publish the real header height into --header-h so the grid placeholder
+    // <site-header>'s reserved height matches what the fixed header occupies.
+    const syncHeaderHeight = () => {
+      document.documentElement.style.setProperty('--header-h', `${header.offsetHeight}px`);
+    };
+    syncHeaderHeight();
+    new ResizeObserver(syncHeaderHeight).observe(header);
+
+    const REVEAL_AT_TOP = 80;   // px from top — header always visible above this
+    const JITTER = 6;           // px — ignore micro-scrolls
+    let lastY = window.scrollY;
+    let ticking = false;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastY;
+      if (Math.abs(delta) < JITTER) { ticking = false; return; }
+      if (y < REVEAL_AT_TOP) {
+        header.removeAttribute('data-hidden');
+      } else if (delta > 0) {
+        header.setAttribute('data-hidden', 'true');   // scrolling down → hide
+      } else {
+        header.removeAttribute('data-hidden');        // scrolling up → reveal
+      }
+      lastY = y;
+      ticking = false;
+    };
+    window.addEventListener('scroll', () => {
+      if (!ticking) { requestAnimationFrame(onScroll); ticking = true; }
+    }, { passive: true });
   }
 }
 

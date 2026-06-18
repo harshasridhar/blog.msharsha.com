@@ -33,7 +33,7 @@
   --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --mono:'JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
 
-  --max:700px;
+  --max:820px;
 }
 
 /* Dark theme — applied when the no-flash script sets data-theme="dark"
@@ -75,6 +75,11 @@ body{
   grid-template-columns:minmax(0,1fr); /* clamp column to viewport so wide kids (code blocks) can't stretch the page */
 }
 site-header,site-footer{display:block;min-width:0}
+/* Reserve the header's height as the first grid row, even though the header
+   itself is position:fixed (so its child has been taken out of layout flow).
+   Without this, the grid would collapse the row to 0 and the hero would slip
+   under the header. */
+site-header{height:var(--header-h,64px)}
 main{min-width:0}
 
 /* thin brand bar at the very top */
@@ -86,11 +91,24 @@ body::before{
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
 
-/* ── SITE HEADER (rendered by <site-header> web component) ── */
+/* ── SITE HEADER (rendered by <site-header> web component) ──
+   Fixed-positioned so we can slide it off-screen with a transform on
+   scroll-down and bring it back on scroll-up. The <site-header> custom
+   element above reserves the equivalent vertical space in the grid so the
+   page content never jumps under it. */
 .site-header{
-  position:sticky;top:3px;z-index:100;
+  position:fixed;top:3px;left:0;right:0;z-index:100;
   background:var(--header-bg);backdrop-filter:saturate(180%) blur(10px);
   border-bottom:1px solid var(--border);
+  transition:transform .25s cubic-bezier(0.22,1,0.36,1);
+  will-change:transform;
+}
+/* Auto-hide on scroll-down past the hero, auto-reveal on any scroll-up.
+   The data-hidden attribute is flipped by the scroll handler in components.js. */
+.site-header[data-hidden="true"]{transform:translateY(-110%)}
+@media(prefers-reduced-motion:reduce){
+  .site-header{transition:none}
+  .site-header[data-hidden="true"]{transform:none}
 }
 .site-header .inner{
   padding:14px clamp(20px,4vw,52px);

@@ -18,6 +18,15 @@ CONTENT = os.path.join(ROOT, "content")
 POSTS = os.path.join(ROOT, "posts")
 SITE = "https://blog.msharsha.com"
 
+# Outbound link attribution. Every external URL in a post body or References
+# block gets these UTM params appended so referral traffic is identifiable on
+# the destination side. Hosts in UTM_SKIP_HOSTS are left untouched (own sites,
+# infra endpoints that don't accept query params). The per-post campaign is
+# the slug; source/medium are constant.
+UTM_PARAMS = {"utm_source": "blog.msharsha.com", "utm_medium": "referral"}
+UTM_SKIP_HOSTS = {"msharsha.com", "blog.msharsha.com", "fonts.googleapis.com",
+                  "fonts.gstatic.com", "www.googletagmanager.com"}
+
 
 # ─────────────────────────── helpers ───────────────────────────
 def esc(s):
@@ -25,6 +34,26 @@ def esc(s):
 
 def attr(s):
     return html.escape(str(s), quote=True)
+
+def utm(url, campaign):
+    """Append UTM params to an external http(s) URL. No-op for in-site, mailto,
+    fragment-only, or already-tagged URLs."""
+    if not url.startswith(("http://", "https://")):
+        return url
+    # Split off the fragment so params land before #, not after.
+    base, _, frag = url.partition("#")
+    if "utm_source=" in base:
+        return url
+    # Crude host parse — avoids importing urllib for one operation.
+    host = base.split("/", 3)[2].lower()
+    if host in UTM_SKIP_HOSTS:
+        return url
+    sep = "&" if "?" in base else "?"
+    params = "&".join(f"{k}={v}" for k, v in UTM_PARAMS.items())
+    if campaign:
+        params += f"&utm_campaign={campaign}"
+    tagged = f"{base}{sep}{params}"
+    return f"{tagged}#{frag}" if frag else tagged
 
 def fmt_date(iso):
     try:
@@ -73,6 +102,10 @@ def _unquote(s):
 
 
 # ───────────────────────── markdown render ─────────────────────
+# Per-post slug used to stamp utm_campaign on outbound links from inside the
+# markdown renderer. render_post sets this before rendering each post.
+_CURRENT_SLUG = ""
+
 def _inline(text):
     codes = []
     text = re.sub(r"`([^`]+)`", lambda m: codes.append(esc(m.group(1))) or f"\x00{len(codes)-1}\x00", text)
@@ -81,6 +114,7 @@ def _inline(text):
     def link(m):
         label, url = m.group(1), m.group(2)
         ext = " target=\"_blank\" rel=\"noopener\"" if url.startswith("http") else ""
+        url = utm(url, _CURRENT_SLUG)
         return f'<a href="{url}"{ext}>{label}</a>'
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", link, text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
@@ -202,7 +236,7 @@ def render_post(meta, body_html, slug):
         for r in meta["references"]:
             if "|" in r:
                 t, u = [x.strip() for x in r.split("|", 1)]
-                items.append(f'<li><a href="{attr(u)}" target="_blank" rel="noopener">{esc(t)}</a></li>')
+                items.append(f'<li><a href="{attr(utm(u, slug))}" target="_blank" rel="noopener">{esc(t)}</a></li>')
             else:
                 items.append(f"<li>{esc(r)}</li>")
         refs = ('\n  <div class="refs">\n    <h4>References</h4>\n    <ul>'
@@ -259,9 +293,11 @@ def main():
     srcs = sorted(p for p in glob.glob(os.path.join(CONTENT, "*.md"))
                   if not os.path.basename(p).startswith("_"))
     posts = []
+    global _CURRENT_SLUG
     for src in srcs:
         slug = os.path.splitext(os.path.basename(src))[0]
         meta, body = parse_frontmatter(open(src, encoding="utf-8").read())
+        _CURRENT_SLUG = slug
         html_out = render_post(meta, render_markdown(body), slug)
         open(os.path.join(POSTS, f"{slug}.html"), "w", encoding="utf-8").write(html_out)
         posts.append((meta, slug))

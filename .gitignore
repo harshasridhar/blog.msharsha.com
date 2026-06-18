@@ -18,3 +18,7 @@ Thumbs.db
 
 # Medium teaser drafts — not part of the published site
 /drafts/
+
+# Agent-facing docs — local reference only, not part of the published site
+/AGENT_BLOG_FORMAT.md
+/THUMBNAIL-PROMPT.md
