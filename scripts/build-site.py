@@ -391,7 +391,36 @@ def main():
             if t and t != primary:
                 cats.append(t)
         cats_xml = "".join(f"\n      <category>{esc(c)}</category>" for c in cats)
-        items.append(f"    <item>\n      <title>{esc(m.get('title',''))}</title>\n      <link>{SITE}/posts/{s}.html</link>\n      <guid>{SITE}/posts/{s}.html</guid>\n      <pubDate>{rfc822(m.get('publishDate',''))}</pubDate>\n      <description>{esc(m.get('subtitle',''))}</description>{cats_xml}\n    </item>")
+        # Per-item image: emit both legacy <enclosure> (classic RSS readers,
+        # podcast tooling) and MediaRSS <media:content> + <media:thumbnail>
+        # (Feedly, Inoreader, Flipboard). Google's Discover feed also reads
+        # media:thumbnail. Byte size is included when the file is on disk;
+        # some validators warn if length="0" so we omit that attr when unknown.
+        media_xml = ""
+        cover = m.get("cover")
+        if cover:
+            img_path = os.path.join(ROOT, "images", f"{cover}-1200.jpg")
+            img_url = f"{SITE}/images/{cover}-1200.jpg"
+            try:
+                length_attr = f' length="{os.path.getsize(img_path)}"'
+            except OSError:
+                length_attr = ""
+            media_xml = (
+                f'\n      <enclosure url="{img_url}"{length_attr} type="image/jpeg"/>'
+                f'\n      <media:content url="{img_url}" medium="image" type="image/jpeg" width="1200" height="630"/>'
+                f'\n      <media:thumbnail url="{img_url}" width="1200" height="630"/>'
+            )
+        items.append(
+            f'    <item>\n'
+            f'      <title>{esc(m.get("title",""))}</title>\n'
+            f'      <link>{SITE}/posts/{s}.html</link>\n'
+            f'      <guid isPermaLink="true">{SITE}/posts/{s}.html</guid>\n'
+            f'      <pubDate>{rfc822(m.get("publishDate",""))}</pubDate>\n'
+            f'      <dc:creator>Harsha Sridhar</dc:creator>\n'
+            f'      <description>{esc(m.get("subtitle",""))}</description>'
+            f'{media_xml}{cats_xml}\n'
+            f'    </item>'
+        )
     open(os.path.join(ROOT, "sitemap.xml"), "w", encoding="utf-8").write(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         + "\n".join(urls) + "\n</urlset>\n")
