@@ -558,13 +558,22 @@ if(!/^(localhost|127\\.0\\.0\\.1|::1|\\[::1\\])$/.test(location.hostname)&&locat
 """
 
 FEED_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0"
+     xmlns:atom="http://www.w3.org/2005/Atom"
+     xmlns:media="http://search.yahoo.com/mrss/"
+     xmlns:content="http://purl.org/rss/1.0/modules/content/"
+     xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>Harsha Sridhar — Blog</title>
     <link>https://blog.msharsha.com/</link>
     <description>Essays on distributed systems, agentic AI, and engineering.</description>
     <language>en-us</language>
     <atom:link href="https://blog.msharsha.com/feed.xml" rel="self" type="application/rss+xml"/>
+    <image>
+      <url>https://msharsha.com/apple-touch-icon.png</url>
+      <title>Harsha Sridhar — Blog</title>
+      <link>https://blog.msharsha.com/</link>
+    </image>
 {{ITEMS}}
   </channel>
 </rss>
