@@ -221,9 +221,19 @@ def cover_picture(cover, alt, klass="cover-wrap", sizes="(max-width:760px) 92vw,
 
 def render_post(meta, body_html, slug):
     tags = meta.get("tags", [])
+    section = meta.get("category") or (tags[0] if tags else "")
     desc = meta.get("description") or meta.get("subtitle", "")
     cover = meta.get("cover")
     og_image = f"{SITE}/images/{cover}-1200.jpg" if cover else "https://msharsha.com/og-image.jpg"
+    # OpenGraph article extensions — LinkedIn / Facebook / Discord scrapers read
+    # these to build richer preview cards. Bing/DuckDuckGo also use them.
+    og_article_meta = []
+    if section:
+        og_article_meta.append(f'<meta property="article:section" content="{attr(section)}">')
+    for t in tags:
+        og_article_meta.append(f'<meta property="article:tag" content="{attr(t)}">')
+    og_article_html = "\n".join(og_article_meta)
+    keywords_meta = f'<meta name="keywords" content="{attr(", ".join(tags))}">' if tags else ""
     crosspost = ""
     if meta.get("medium"):
         crosspost = (f'\n  <p class="crosspost">A shorter version of this piece is on '
@@ -249,6 +259,9 @@ def render_post(meta, body_html, slug):
         "OG_IMAGE": attr(og_image),
         "PUBLISHED": meta.get("publishDate", ""),
         "KEYWORDS": json.dumps(tags),
+        "SECTION": attr(section),
+        "OG_ARTICLE_META": og_article_html,
+        "KEYWORDS_META": keywords_meta,
         "TAGS": "".join(f'<span class="tag">{esc(t)}</span>' for t in tags),
         "READTIME": esc(meta.get("readTime", "")),
         "DATE_DISPLAY": fmt_date(meta.get("publishDate", "")),
@@ -265,6 +278,15 @@ def render_post(meta, body_html, slug):
 def render_card(meta, slug):
     cover = meta.get("cover")
     category = meta.get("category") or (meta.get("tags") or ["Article"])[0]
+    # Show up to 3 secondary tags per card — feeds both readers scanning the
+    # index and crawlers building topic clusters. Skip the category, which is
+    # already shown as the chip above.
+    tags = [t for t in (meta.get("tags") or []) if t and t != category][:3]
+    tags_html = ""
+    if tags:
+        tags_html = ('\n          <div class="card-tags">'
+                     + "".join(f'<span class="card-tag">{esc(t)}</span>' for t in tags)
+                     + "</div>")
     thumb = ""
     if cover:
         thumb = (f'\n        <div class="card-thumb">\n          '
@@ -280,6 +302,7 @@ def render_card(meta, slug):
         "TITLE": esc(meta.get("title", "")),
         "SUBTITLE": esc(meta.get("subtitle", "")),
         "READTIME": esc(meta.get("readTime", "")),
+        "CARDTAGS": tags_html,
     }
     out = CARD_TEMPLATE
     for k, v in repl.items():
@@ -306,15 +329,69 @@ def main():
     posts.sort(key=lambda p: p[0].get("publishDate", ""), reverse=True)
 
     cards = "\n".join(render_card(m, s) for m, s in posts)
+    # Index-page JSON-LD: a Blog with an embedded ItemList so Google can index
+    # the feed structure and understand this URL as the root of a series of
+    # articles.
+    all_tags = []
+    seen = set()
+    for m, _s in posts:
+        for t in (m.get("tags") or []):
+            if t and t not in seen:
+                seen.add(t); all_tags.append(t)
+    index_ld = {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "@id": f"{SITE}/",
+        "url": f"{SITE}/",
+        "name": "Harsha Sridhar — Blog",
+        "description": "Essays on distributed systems, agentic AI, and engineering by Harsha Sridhar (MS Harsha), Senior Software Engineer at Roku.",
+        "author": {"@type": "Person", "name": "Harsha Sridhar",
+                   "alternateName": "MS Harsha", "url": "https://msharsha.com"},
+        "publisher": {"@type": "Person", "name": "Harsha Sridhar",
+                      "url": "https://msharsha.com"},
+        "keywords": all_tags,
+        "blogPost": [
+            {"@type": "BlogPosting",
+             "headline": m.get("title", ""),
+             "url": f"{SITE}/posts/{s}.html",
+             "datePublished": m.get("publishDate", ""),
+             "description": m.get("subtitle", ""),
+             "keywords": m.get("tags") or []}
+            for m, s in posts
+        ],
+    }
+    itemlist_ld = {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": i + 1,
+             "url": f"{SITE}/posts/{s}.html", "name": m.get("title", "")}
+            for i, (m, s) in enumerate(posts)
+        ],
+    }
+    index_ld_html = (
+        f'<script type="application/ld+json">\n{json.dumps(index_ld, ensure_ascii=False)}\n</script>\n'
+        f'<script type="application/ld+json">\n{json.dumps(itemlist_ld, ensure_ascii=False)}\n</script>'
+    )
     open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8").write(
-        INDEX_TEMPLATE.replace("{{CARDS}}", cards))
+        INDEX_TEMPLATE.replace("{{CARDS}}", cards).replace("{{INDEX_LD}}", index_ld_html))
     print("  index.html")
 
     urls = [f"  <url>\n    <loc>{SITE}/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>"]
     items = []
     for m, s in posts:
         urls.append(f"  <url>\n    <loc>{SITE}/posts/{s}.html</loc>\n    <lastmod>{m.get('publishDate','')}</lastmod>\n    <priority>0.8</priority>\n  </url>")
-        items.append(f"    <item>\n      <title>{esc(m.get('title',''))}</title>\n      <link>{SITE}/posts/{s}.html</link>\n      <guid>{SITE}/posts/{s}.html</guid>\n      <pubDate>{rfc822(m.get('publishDate',''))}</pubDate>\n      <description>{esc(m.get('subtitle',''))}</description>\n    </item>")
+        # Categorize each RSS item by its tags so readers/aggregators can filter.
+        # Category is added first so the primary bucket sorts to the top.
+        cats = []
+        primary = m.get("category")
+        if primary:
+            cats.append(primary)
+        for t in (m.get("tags") or []):
+            if t and t != primary:
+                cats.append(t)
+        cats_xml = "".join(f"\n      <category>{esc(c)}</category>" for c in cats)
+        items.append(f"    <item>\n      <title>{esc(m.get('title',''))}</title>\n      <link>{SITE}/posts/{s}.html</link>\n      <guid>{SITE}/posts/{s}.html</guid>\n      <pubDate>{rfc822(m.get('publishDate',''))}</pubDate>\n      <description>{esc(m.get('subtitle',''))}</description>{cats_xml}\n    </item>")
     open(os.path.join(ROOT, "sitemap.xml"), "w", encoding="utf-8").write(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         + "\n".join(urls) + "\n</urlset>\n")
@@ -331,6 +408,7 @@ POST_TEMPLATE = """<!DOCTYPE html>
 <script>(function(){try{var s=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',(s==='light'||s==='dark')?s:(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));}catch(e){}})();</script>
 <title>{{TITLE}} — Harsha Sridhar</title>
 <meta name="description" content="{{DESCRIPTION}}">
+{{KEYWORDS_META}}
 <link rel="canonical" href="https://blog.msharsha.com/posts/{{SLUG}}.html">
 <meta name="author" content="Harsha Sridhar">
 <meta name="copyright" content="© 2026 Harsha Sridhar. All rights reserved.">
@@ -339,8 +417,14 @@ POST_TEMPLATE = """<!DOCTYPE html>
 <meta property="og:description" content="{{DESCRIPTION}}">
 <meta property="og:url" content="https://blog.msharsha.com/posts/{{SLUG}}.html">
 <meta property="og:image" content="{{OG_IMAGE}}">
+<meta property="og:site_name" content="Harsha Sridhar — Blog">
 <meta property="article:published_time" content="{{PUBLISHED}}">
+<meta property="article:author" content="Harsha Sridhar">
+{{OG_ARTICLE_META}}
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{TITLE}}">
+<meta name="twitter:description" content="{{DESCRIPTION}}">
+<meta name="twitter:image" content="{{OG_IMAGE}}">
 <link rel="icon" href="https://msharsha.com/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="https://msharsha.com/apple-touch-icon.png">
 <link rel="alternate" type="application/rss+xml" title="Harsha Sridhar — Blog" href="/feed.xml">
@@ -355,7 +439,7 @@ window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);
 if(!/^(localhost|127\\.0\\.0\\.1|::1|\\[::1\\])$/.test(location.hostname)&&location.protocol!=='file:'){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-H9NJDMDFE2';document.head.appendChild(s);gtag('js',new Date());gtag('config','G-H9NJDMDFE2');}
 </script>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","headline":"{{TITLE}}","description":"{{DESCRIPTION}}","datePublished":"{{PUBLISHED}}","dateModified":"{{PUBLISHED}}","author":{"@type":"Person","name":"Harsha Sridhar","alternateName":"MS Harsha","url":"https://msharsha.com"},"publisher":{"@type":"Person","name":"Harsha Sridhar","url":"https://msharsha.com"},"mainEntityOfPage":"https://blog.msharsha.com/posts/{{SLUG}}.html","image":"{{OG_IMAGE}}","keywords":{{KEYWORDS}}}
+{"@context":"https://schema.org","@type":"BlogPosting","headline":"{{TITLE}}","description":"{{DESCRIPTION}}","datePublished":"{{PUBLISHED}}","dateModified":"{{PUBLISHED}}","author":{"@type":"Person","name":"Harsha Sridhar","alternateName":"MS Harsha","url":"https://msharsha.com"},"publisher":{"@type":"Person","name":"Harsha Sridhar","url":"https://msharsha.com"},"mainEntityOfPage":"https://blog.msharsha.com/posts/{{SLUG}}.html","image":"{{OG_IMAGE}}","keywords":{{KEYWORDS}},"articleSection":"{{SECTION}}"}
 </script>
 </head>
 <body>
@@ -406,7 +490,7 @@ CARD_TEMPLATE = """    <li>
             <span class="card-date">{{DATE_DISPLAY}}</span>
           </div>
           <h2 class="card-title">{{TITLE}}</h2>
-          <p class="card-dek">{{SUBTITLE}}</p>
+          <p class="card-dek">{{SUBTITLE}}</p>{{CARDTAGS}}
           <div class="card-foot">
             <span>{{READTIME}} read</span>
             <span class="arrow">Read →</span>
@@ -445,6 +529,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
 if(!/^(localhost|127\\.0\\.0\\.1|::1|\\[::1\\])$/.test(location.hostname)&&location.protocol!=='file:'){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-H9NJDMDFE2';document.head.appendChild(s);gtag('js',new Date());gtag('config','G-H9NJDMDFE2');}
 </script>
+{{INDEX_LD}}
 </head>
 <body>
 
