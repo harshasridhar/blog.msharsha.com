@@ -22,3 +22,7 @@ Thumbs.db
 # Agent-facing docs — local reference only, not part of the published site
 /AGENT_BLOG_FORMAT.md
 /THUMBNAIL-PROMPT.md
+
+# Firebase config + reCAPTCHA key — injected at build time from GitHub secrets
+firebase-config.json
+.recaptcha-site-key

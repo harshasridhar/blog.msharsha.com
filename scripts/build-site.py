@@ -219,7 +219,7 @@ def cover_picture(cover, alt, klass="cover-wrap", sizes="(max-width:760px) 92vw,
             f'    <img{icls} src="/images/{cover}-1200.jpg" alt="{attr(alt)}" width="1200" height="630"{extra}>\n'
             f'  </picture>')
 
-def render_post(meta, body_html, slug):
+def render_post(meta, body_html, slug, firebase_config_json="null", recaptcha_script=""):
     tags = meta.get("tags", [])
     section = meta.get("category") or (tags[0] if tags else "")
     desc = meta.get("description") or meta.get("subtitle", "")
@@ -251,6 +251,11 @@ def render_post(meta, body_html, slug):
                 items.append(f"<li>{esc(r)}</li>")
         refs = ('\n  <div class="refs">\n    <h4>References</h4>\n    <ul>'
                 + "".join(items) + "</ul>\n  </div>\n")
+    # Conditionally include comments section (can be disabled per-post via frontmatter)
+    comments_html = ""
+    if meta.get("comments", True):  # Default to True; set to False to disable
+        comments_html = f'<post-comments post="{slug}"></post-comments>'
+
     repl = {
         "TITLE": esc(meta.get("title", "")),
         "DESCRIPTION": attr(desc),
@@ -269,6 +274,9 @@ def render_post(meta, body_html, slug):
         "COVER": cover_html,
         "BODY": body_html,
         "REFS": refs,
+        "COMMENTS": comments_html,
+        "FIREBASE_CONFIG": firebase_config_json,
+        "RECAPTCHA_SCRIPT": recaptcha_script,
     }
     out = POST_TEMPLATE
     for k, v in repl.items():
@@ -311,8 +319,57 @@ def render_card(meta, slug):
 
 
 # ─────────────────────────── main ──────────────────────────────
+def load_recaptcha_key():
+    """Read the reCAPTCHA v3 site key from RECAPTCHA_SITE_KEY env var (set by
+    GitHub Actions from a repository secret), falling back to the file
+    .recaptcha-site-key for local development.
+
+    Returns the rendered <script> tag to inline, or an empty string if the key
+    is unavailable (reCAPTCHA silently disabled, everything else still works).
+    """
+    key = os.environ.get("RECAPTCHA_SITE_KEY", "").strip()
+    if not key:
+        key_file = os.path.join(ROOT, ".recaptcha-site-key")
+        if os.path.exists(key_file):
+            key = open(key_file).read().strip()
+    if not key:
+        print("  WARNING: RECAPTCHA_SITE_KEY not set — reCAPTCHA will be "
+              "disabled in the built site. Set the secret in GitHub repository "
+              "settings or create .recaptcha-site-key locally.")
+        return ""
+    return (f'<script src="https://www.google.com/recaptcha/api.js'
+            f'?render={key}" async defer></script>')
+
+
+def load_firebase_config():
+    """Read firebase-config.json from the repo root.
+
+    At build time the file is either:
+    - Written by the GitHub Actions step that injects secrets, OR
+    - Present locally (gitignored) for local development.
+
+    Returns the raw JSON string so it can be inlined directly into the HTML
+    instead of being fetched at runtime (one fewer network round-trip).
+    If the file is missing the build succeeds but Firebase will not initialise;
+    a clear warning is printed so the developer notices immediately.
+    """
+    config_path = os.path.join(ROOT, "firebase-config.json")
+    if not os.path.exists(config_path):
+        print("  WARNING: firebase-config.json not found — Firebase features "
+              "will be disabled in the built site. "
+              "Add FIREBASE_CONFIG_JSON to your GitHub repository secrets.")
+        return "null"
+    with open(config_path, encoding="utf-8") as f:
+        raw = f.read().strip()
+    # Validate it's parseable JSON before inlining it into a <script> tag.
+    json.loads(raw)
+    return raw
+
+
 def main():
     os.makedirs(POSTS, exist_ok=True)
+    firebase_config_json = load_firebase_config()
+    recaptcha_script = load_recaptcha_key()
     srcs = sorted(p for p in glob.glob(os.path.join(CONTENT, "*.md"))
                   if not os.path.basename(p).startswith("_"))
     posts = []
@@ -321,7 +378,7 @@ def main():
         slug = os.path.splitext(os.path.basename(src))[0]
         meta, body = parse_frontmatter(open(src, encoding="utf-8").read())
         _CURRENT_SLUG = slug
-        html_out = render_post(meta, render_markdown(body), slug)
+        html_out = render_post(meta, render_markdown(body), slug, firebase_config_json, recaptcha_script)
         open(os.path.join(POSTS, f"{slug}.html"), "w", encoding="utf-8").write(html_out)
         posts.append((meta, slug))
         print(f"  post  {slug}.html")
@@ -463,6 +520,40 @@ POST_TEMPLATE = """<!DOCTYPE html>
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
 <link rel="stylesheet" href="/style.css">
 <script src="/components.js"></script>
+<script src="/post-comments.js"></script>
+<!-- Firebase compat builds (UMD) — expose firebase.* globals, no import/export needed -->
+<script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  var config={{FIREBASE_CONFIG}};
+  if(!config){ console.warn('Firebase config missing — dynamic features disabled.'); return; }
+  window.firebaseConfig=config;
+  if(!firebase.apps.length){ firebase.initializeApp(config); }
+  window.firebaseAuth=firebase.auth();
+  window.firebaseDb=firebase.firestore();
+
+  // Enable anonymous auth for likes (silent, no UI on first visit).
+  // Strategy: auto-sign-in anon only if the user has never had any auth session.
+  // Track "ever had auth" flag; once set, only sign out clears it (on next page load).
+  var sessionHasHadAuthUser = false;  // Track within this page session
+  window.firebaseAuth.onAuthStateChanged(function(user){
+    if(user){
+      // User is authenticated (GitHub, Google, or anon)
+      sessionHasHadAuthUser = true;
+    } else if(!user && !sessionHasHadAuthUser){
+      // No user AND this session never had one → sign in anon for first time
+      window.firebaseAuth.signInAnonymously().catch(function(err){
+        console.warn('Anonymous sign-in failed:',err);
+      });
+      sessionHasHadAuthUser = true;  // Mark that we tried
+    }
+    // If !user && sessionHasHadAuthUser, user clicked sign out → stay signed out
+  });
+})();
+</script>
+{{RECAPTCHA_SCRIPT}}
 <script>
 window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
 if(!/^(localhost|127\\.0\\.0\\.1|::1|\\[::1\\])$/.test(location.hostname)&&location.protocol!=='file:'){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-H9NJDMDFE2';document.head.appendChild(s);gtag('js',new Date());gtag('config','G-H9NJDMDFE2');}
@@ -501,9 +592,14 @@ if(!/^(localhost|127\\.0\\.0\\.1|::1|\\[::1\\])$/.test(location.hostname)&&locat
       <a class="btn primary" href="/">Read more articles</a>
       <a class="btn" href="https://www.linkedin.com/in/harsha-sridhar/" target="_blank" rel="noopener">Connect on LinkedIn</a>
     </div>
+    <subscribe-form></subscribe-form>
   </div>
 
+{{COMMENTS}}
+
 </main>
+
+<subscribe-popup></subscribe-popup>
 
 <site-footer></site-footer>
 

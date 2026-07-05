@@ -26,6 +26,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Inject secrets
+        run: |
+          echo '${{ secrets.FIREBASE_CONFIG_JSON }}' > firebase-config.json
+          echo '${{ secrets.RECAPTCHA_SITE_KEY }}' > .recaptcha-site-key
+
       - name: Build site (optimize images + render HTML from Markdown)
         run: |
           pip install Pillow
