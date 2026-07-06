@@ -194,9 +194,30 @@ class PostComments extends HTMLElement {
     this.unsubscribes.push(unsubscribe);
   }
 
+  showToast(message, type = 'error') {
+    // Lightweight toast for transient feedback (like errors, comment errors)
+    // where there's no persistent container to inject into.
+    const existing = document.querySelector('.comments-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = `comments-toast comments-toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Animate in
+    requestAnimationFrame(() => toast.classList.add('comments-toast-visible'));
+
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+      toast.classList.remove('comments-toast-visible');
+      setTimeout(() => toast.remove(), 300);
+    }, 4000);
+  }
+
   async handleLikePost() {
     if (!this.user) {
-      alert('Please sign in to like posts');
+      // Should not happen — anon auth means user is always set — but handle defensively
       return;
     }
 
@@ -226,15 +247,12 @@ class PostComments extends HTMLElement {
       }
     } catch (error) {
       console.error('Error toggling post like:', error);
-      alert('Failed to toggle like: ' + error.message);
+      this.showToast('Could not save your like — please try again.');
     }
   }
 
   async handleLikeComment(commentId) {
-    if (!this.user) {
-      alert('Please sign in to like comments');
-      return;
-    }
+    if (!this.user) return;  // Anon auth means user is always set
 
     try {
       // Get reCAPTCHA token for bot protection (invisible)
@@ -265,7 +283,7 @@ class PostComments extends HTMLElement {
       }
     } catch (error) {
       console.error('Error toggling comment like:', error);
-      alert('Failed to toggle like: ' + error.message);
+      this.showToast('Could not save your like — please try again.');
     }
   }
 
@@ -280,8 +298,58 @@ class PostComments extends HTMLElement {
       }
     } catch (error) {
       console.error('Sign-in error:', error);
-      alert('Failed to sign in: ' + error.message);
+
+      // Map Firebase auth error codes to friendly, actionable messages.
+      const messages = {
+        'auth/account-exists-with-different-credential':
+          'You already have an account with this email using a different sign-in method. ' +
+          'Try signing in with the other provider (GitHub or Google).',
+        'auth/popup-blocked':
+          'Sign-in popup was blocked by your browser. Please allow popups for this site and try again.',
+        'auth/popup-closed-by-user':
+          null,  // User cancelled intentionally — no message needed
+        'auth/cancelled-popup-request':
+          null,  // Duplicate popup, silent
+        'auth/network-request-failed':
+          'Network error — check your connection and try again.',
+        'auth/too-many-requests':
+          'Too many sign-in attempts. Please wait a moment and try again.',
+        'auth/user-disabled':
+          'This account has been disabled. Please contact support.',
+      };
+
+      const message = messages[error.code];
+      if (message === undefined) {
+        // Unknown error — show a generic but still not an alert()
+        this.showAuthError(`Sign-in failed. Please try again. (${error.code})`);
+      } else if (message !== null) {
+        // Known, user-facing error
+        this.showAuthError(message);
+      }
+      // null = intentional cancellation, silently swallow
     }
+  }
+
+  showAuthError(message) {
+    // Render the error inline in the auth section rather than using alert().
+    // Finds the auth container and inserts a dismissable error banner.
+    const authDiv = this.querySelector('.comments-auth');
+    if (!authDiv) return;
+
+    // Remove any previous error
+    const existing = authDiv.querySelector('.auth-error-msg');
+    if (existing) existing.remove();
+
+    const err = document.createElement('p');
+    err.className = 'auth-error-msg';
+    err.textContent = message;
+
+    // Insert above the buttons
+    const buttons = authDiv.querySelector('.comments-auth-buttons');
+    authDiv.insertBefore(err, buttons);
+
+    // Auto-dismiss after 8 seconds
+    setTimeout(() => err.remove(), 8000);
   }
 
   async handleSignOut() {
@@ -294,20 +362,21 @@ class PostComments extends HTMLElement {
 
   async handleSubmitComment(e) {
     e.preventDefault();
-    if (!this.user) {
-      alert('Please sign in to comment');
-      return;
-    }
+    if (!this.user) return;  // Gate is in the UI; shouldn't reach here
 
     const textarea = this.querySelector('textarea[name="body"]');
     const body = textarea?.value?.trim();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const formError = this.querySelector('.comment-form-error');
+
+    // Clear previous inline error
+    if (formError) formError.textContent = '';
 
     if (!body) {
-      alert('Comment cannot be empty');
+      if (formError) formError.textContent = 'Comment cannot be empty.';
       return;
     }
 
-    const submitBtn = this.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Posting...';
 
@@ -330,7 +399,7 @@ class PostComments extends HTMLElement {
       this.render();
     } catch (error) {
       console.error('Error posting comment:', error);
-      alert('Failed to post comment: ' + error.message);
+      if (formError) formError.textContent = 'Failed to post — please try again.';
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Post Comment';
@@ -403,6 +472,28 @@ class PostComments extends HTMLElement {
 
       [data-theme="dark"] .comments-auth p {
         color: #aaa;
+      }
+
+      .auth-error-msg {
+        margin: 0 0 0.75rem 0 !important;
+        padding: 0.6rem 0.85rem;
+        border-radius: 4px;
+        font-size: 0.875rem !important;
+        color: #c0392b !important;
+        background: #fdf0ef;
+        border-left: 3px solid #c0392b;
+        animation: fadeIn 0.2s ease;
+      }
+
+      [data-theme="dark"] .auth-error-msg {
+        color: #ff6b6b !important;
+        background: #2d1f1f;
+        border-left-color: #ff6b6b;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
       }
 
       .comments-auth-buttons {
@@ -549,6 +640,52 @@ class PostComments extends HTMLElement {
       .comments-submit-btn:disabled {
         background: #ccc;
         cursor: not-allowed;
+      }
+
+      .comment-form-error {
+        margin: 0.25rem 0 0.5rem 0;
+        font-size: 0.85rem;
+        color: #c0392b;
+        min-height: 1.2em;
+      }
+
+      [data-theme="dark"] .comment-form-error {
+        color: #ff6b6b;
+      }
+
+      /* Toast — floats bottom-right, used for transient like/comment errors */
+      .comments-toast {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        padding: 0.75rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        max-width: 320px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.25s ease, transform 0.25s ease;
+        z-index: 9999;
+        pointer-events: none;
+      }
+
+      .comments-toast-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .comments-toast-error {
+        background: #fff0f0;
+        color: #c0392b;
+        border-left: 3px solid #c0392b;
+      }
+
+      [data-theme="dark"] .comments-toast-error {
+        background: #2d1f1f;
+        color: #ff6b6b;
+        border-left-color: #ff6b6b;
       }
 
       .comments-list {
@@ -736,6 +873,7 @@ class PostComments extends HTMLElement {
         </div>
         <form class="comments-form">
           <textarea name="body" placeholder="Share your thoughts..."></textarea>
+          <p class="comment-form-error"></p>
           <div class="comments-form-buttons">
             <button type="submit" class="comments-submit-btn">Post Comment</button>
           </div>
@@ -898,13 +1036,17 @@ class SubscribeForm extends HTMLElement {
     const input = this.querySelector('input[type="email"]');
     const email = input?.value?.trim();
 
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const msgEl = this.querySelector('.subscribe-form-msg');
+
+    if (msgEl) msgEl.textContent = '';
+
     if (!email) {
-      alert('Please enter your email');
+      if (msgEl) { msgEl.textContent = 'Please enter your email.'; msgEl.dataset.type = 'error'; }
       return;
     }
 
     this.isSubmitting = true;
-    const submitBtn = this.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Subscribing...';
 
@@ -926,25 +1068,16 @@ class SubscribeForm extends HTMLElement {
           source: 'website'
         });
 
-      // Clear input and show success
       input.value = '';
-      submitBtn.disabled = false;
       submitBtn.textContent = 'Subscribed!';
-
-      // Reset button after 3 seconds
-      setTimeout(() => {
-        submitBtn.textContent = 'Subscribe';
-        submitBtn.disabled = false;
-      }, 3000);
-
-      alert('Thanks for subscribing! Check your email to confirm.');
+      if (msgEl) { msgEl.textContent = 'Thanks! Check your email to confirm.'; msgEl.dataset.type = 'success'; }
+      setTimeout(() => { submitBtn.textContent = 'Subscribe'; submitBtn.disabled = false; }, 3000);
     } catch (error) {
       if (error.code === 'permission-denied') {
-        // update is blocked by rules → doc already exists → already subscribed
-        alert('This email is already subscribed!');
+        if (msgEl) { msgEl.textContent = 'You\'re already subscribed!'; msgEl.dataset.type = 'info'; }
       } else {
         console.error('Subscribe error:', error);
-        alert('Failed to subscribe: ' + error.message);
+        if (msgEl) { msgEl.textContent = 'Failed to subscribe — please try again.'; msgEl.dataset.type = 'error'; }
       }
       submitBtn.disabled = false;
       submitBtn.textContent = 'Subscribe';
@@ -1043,6 +1176,20 @@ class SubscribeForm extends HTMLElement {
         background: var(--accent-hover, #b6aef7);
       }
 
+      .subscribe-form-msg {
+        margin: 0.4rem 0 0 0;
+        font-size: 0.85rem;
+        min-height: 1.1em;
+      }
+
+      .subscribe-form-msg[data-type="success"] { color: #2e7d32; }
+      .subscribe-form-msg[data-type="error"]   { color: #c0392b; }
+      .subscribe-form-msg[data-type="info"]    { color: #1976d2; }
+
+      [data-theme="dark"] .subscribe-form-msg[data-type="success"] { color: #66bb6a; }
+      [data-theme="dark"] .subscribe-form-msg[data-type="error"]   { color: #ff6b6b; }
+      [data-theme="dark"] .subscribe-form-msg[data-type="info"]    { color: #64b5f6; }
+
       @media (max-width: 560px) {
         .subscribe-form-wrap {
           flex-direction: column;
@@ -1062,6 +1209,7 @@ class SubscribeForm extends HTMLElement {
         <input type="email" placeholder="Email address" required aria-label="Subscribe to newsletter">
         <button type="submit">Subscribe</button>
       </form>
+      <p class="subscribe-form-msg"></p>
     `;
   }
 
