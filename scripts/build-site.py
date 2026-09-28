@@ -560,6 +560,21 @@ def main():
         + "\n".join(urls) + "\n</urlset>\n")
     open(os.path.join(ROOT, "feed.xml"), "w", encoding="utf-8").write(FEED_TEMPLATE.replace("{{ITEMS}}", "\n".join(items)))
     print("  sitemap.xml + feed.xml")
+
+    # ── llms.txt ──────────────────────────────────────────────────
+    llms_lines = [
+        "# Harsha's Engineering Blog",
+        "> Technical writing on AI engineering, software design, and the craft of building things that work.",
+        "",
+    ]
+    for meta, slug in posts:
+        title = meta.get("title", slug)
+        desc = meta.get("description") or meta.get("subtitle", "")
+        llms_lines.append(f"- [{title}]({SITE}/posts/{slug}.html): {desc}")
+    open(os.path.join(ROOT, "llms.txt"), "w", encoding="utf-8").write(
+        "\n".join(llms_lines) + "\n")
+    print("  llms.txt")
+
     print(f"Done — {len(posts)} post(s) built.")
 
 
