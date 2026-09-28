@@ -318,6 +318,65 @@ def render_card(meta, slug):
     return out
 
 
+def render_hero(meta, slug):
+    """Big email-style hero card for the latest post — image, eyebrow, title,
+    dek, CTA. Rendered once at the top of the index; the rest of the posts
+    flow into the carousel below."""
+    cover = meta.get("cover")
+    category = meta.get("category") or (meta.get("tags") or ["Article"])[0]
+    hero_img = ""
+    if cover:
+        # Wider image than in the small feed cards — matches the article hero
+        # crop so the LCP is comparable to opening the post itself.
+        hero_img = ('\n      <div class="hero-thumb">\n        '
+                    + cover_picture(cover, f'{meta.get("title","")} — cover', klass="",
+                                    sizes="(max-width:820px) 92vw, 820px",
+                                    webp_widths=(480, 800, 1200),
+                                    img_class="", extra=' loading="eager" decoding="async" fetchpriority="high"')
+                    + "\n      </div>")
+    repl = {
+        "SLUG": slug,
+        "HERO_IMG": hero_img,
+        "CATEGORY": esc(category),
+        "DATE_DISPLAY": fmt_date(meta.get("publishDate", "")),
+        "TITLE": esc(meta.get("title", "")),
+        "SUBTITLE": esc(meta.get("subtitle", "")),
+        "READTIME": esc(meta.get("readTime", "")),
+    }
+    out = HERO_TEMPLATE
+    for k, v in repl.items():
+        out = out.replace("{{" + k + "}}", v)
+    return out
+
+
+def render_carousel_card(meta, slug):
+    """Compact card for the horizontal carousel — image on top, text below.
+    Mirrors the email-newsletter card visual, at a smaller footprint."""
+    cover = meta.get("cover")
+    category = meta.get("category") or (meta.get("tags") or ["Article"])[0]
+    thumb = ""
+    if cover:
+        thumb = ('\n        <div class="ccard-thumb">\n          '
+                 + cover_picture(cover, f'{meta.get("title","")} — cover', klass="",
+                                 sizes="(max-width:560px) 78vw, 300px",
+                                 webp_widths=(480, 800),
+                                 img_class="", extra=' loading="lazy" decoding="async"')
+                 + "\n        </div>")
+    repl = {
+        "SLUG": slug,
+        "THUMB": thumb,
+        "CATEGORY": esc(category),
+        "DATE_DISPLAY": fmt_date(meta.get("publishDate", "")),
+        "TITLE": esc(meta.get("title", "")),
+        "SUBTITLE": esc(meta.get("subtitle", "")),
+        "READTIME": esc(meta.get("readTime", "")),
+    }
+    out = CAROUSEL_CARD_TEMPLATE
+    for k, v in repl.items():
+        out = out.replace("{{" + k + "}}", v)
+    return out
+
+
 # ─────────────────────────── main ──────────────────────────────
 def load_recaptcha_key():
     """Read the reCAPTCHA v3 site key from RECAPTCHA_SITE_KEY env var (set by
@@ -385,6 +444,21 @@ def main():
 
     posts.sort(key=lambda p: p[0].get("publishDate", ""), reverse=True)
 
+    # Latest post → email-style hero card. Everything after it flows into a
+    # horizontal carousel of compact cards. If somehow there's only one post,
+    # the carousel section is hidden.
+    if posts:
+        hero_html = render_hero(posts[0][0], posts[0][1])
+        rest = posts[1:]
+    else:
+        hero_html = ""
+        rest = []
+    carousel_cards = "\n".join(render_carousel_card(m, s) for m, s in rest)
+    carousel_section = ""
+    if carousel_cards:
+        carousel_section = CAROUSEL_SECTION_TEMPLATE.replace("{{CAROUSEL_CARDS}}", carousel_cards)
+    # Legacy full card list is still built — used only if a future rebuild
+    # needs it, currently unreferenced by the index template.
     cards = "\n".join(render_card(m, s) for m, s in posts)
     # Index-page JSON-LD: a Blog with an embedded ItemList so Google can index
     # the feed structure and understand this URL as the root of a series of
@@ -431,7 +505,10 @@ def main():
         f'<script type="application/ld+json">\n{json.dumps(itemlist_ld, ensure_ascii=False)}\n</script>'
     )
     open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8").write(
-        INDEX_TEMPLATE.replace("{{CARDS}}", cards).replace("{{INDEX_LD}}", index_ld_html))
+        INDEX_TEMPLATE
+            .replace("{{HERO}}", hero_html)
+            .replace("{{CAROUSEL}}", carousel_section)
+            .replace("{{INDEX_LD}}", index_ld_html))
     print("  index.html")
 
     urls = [f"  <url>\n    <loc>{SITE}/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>"]
@@ -607,6 +684,84 @@ if(!/^(localhost|127\\.0\\.0\\.1|::1|\\[::1\\])$/.test(location.hostname)&&locat
 </html>
 """
 
+HERO_TEMPLATE = """  <a class="hero-card" href="/posts/{{SLUG}}.html">{{HERO_IMG}}
+    <div class="hero-body">
+      <div class="hero-eyebrow">Latest post</div>
+      <h2 class="hero-title">{{TITLE}}</h2>
+      <p class="hero-dek">{{SUBTITLE}}</p>
+      <div class="hero-meta">
+        <span class="chip">{{CATEGORY}}</span>
+        <span>{{DATE_DISPLAY}}</span>
+        <span>·</span>
+        <span>{{READTIME}} read</span>
+      </div>
+      <span class="hero-cta">Read the post →</span>
+    </div>
+  </a>"""
+
+
+CAROUSEL_CARD_TEMPLATE = """      <li class="ccard-item">
+        <a class="ccard" href="/posts/{{SLUG}}.html">{{THUMB}}
+          <div class="ccard-body">
+            <div class="ccard-top">
+              <span class="chip">{{CATEGORY}}</span>
+              <span class="ccard-date">{{DATE_DISPLAY}}</span>
+            </div>
+            <h3 class="ccard-title">{{TITLE}}</h3>
+            <p class="ccard-dek">{{SUBTITLE}}</p>
+            <div class="ccard-foot">
+              <span>{{READTIME}} read</span>
+              <span class="arrow">Read →</span>
+            </div>
+          </div>
+        </a>
+      </li>"""
+
+
+CAROUSEL_SECTION_TEMPLATE = """  <section class="carousel" aria-label="More posts">
+    <div class="carousel-head">
+      <h2 class="carousel-title">More posts</h2>
+      <div class="carousel-nav" role="group" aria-label="Scroll posts">
+        <button class="carousel-btn" type="button" data-dir="prev" aria-label="Previous posts">&larr;</button>
+        <button class="carousel-btn" type="button" data-dir="next" aria-label="More posts">&rarr;</button>
+      </div>
+    </div>
+    <ul class="carousel-track">
+{{CAROUSEL_CARDS}}
+    </ul>
+  </section>
+  <script>
+  (function(){
+    var track=document.querySelector('.carousel-track');
+    if(!track) return;
+    var btns=document.querySelectorAll('.carousel-btn');
+    function step(){
+      // Scroll by roughly one card width (the first item), so pagers
+      // feel like flipping pages rather than nudging pixels.
+      var item=track.querySelector('.ccard-item');
+      if(!item) return 320;
+      var s=getComputedStyle(track).columnGap||getComputedStyle(track).gap||'0';
+      var gap=parseFloat(s)||0;
+      return item.getBoundingClientRect().width+gap;
+    }
+    function update(){
+      var max=track.scrollWidth-track.clientWidth-1;
+      btns[0].disabled=track.scrollLeft<=0;
+      btns[1].disabled=track.scrollLeft>=max;
+    }
+    btns.forEach(function(b){
+      b.addEventListener('click',function(){
+        var d=b.getAttribute('data-dir')==='next'?1:-1;
+        track.scrollBy({left:d*step(),behavior:'smooth'});
+      });
+    });
+    track.addEventListener('scroll',update,{passive:true});
+    window.addEventListener('resize',update);
+    update();
+  })();
+  </script>"""
+
+
 CARD_TEMPLATE = """    <li>
       <a class="card" href="/posts/{{SLUG}}.html">{{THUMB}}
         <div class="card-body">
@@ -668,11 +823,13 @@ if(!/^(localhost|127\\.0\\.0\\.1|::1|\\[::1\\])$/.test(location.hostname)&&locat
     <p>Essays on software, agentic AI, and the physics of scale — from an engineer who keeps asking why.</p>
   </div>
 
-  <ul class="feed">
+  <div class="home">
 
-{{CARDS}}
+{{HERO}}
 
-  </ul>
+{{CAROUSEL}}
+
+  </div>
 
 </main>
 
