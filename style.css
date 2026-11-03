@@ -312,10 +312,11 @@ pre code{background:none;border:none;padding:0;font-size:14px;color:inherit}
   text-decoration:none;transform:translateY(-3px);
   box-shadow:0 20px 48px var(--shadow);border-color:var(--accent-soft);
 }
-/* Cap the hero image so the CTA is above the fold on typical laptop
-   viewports. 1200:630 is the natural OG crop; we mask it to a shallower
-   ratio here rather than re-cropping the asset. */
-.hero-thumb{position:relative;background:#0e0e13;overflow:hidden;aspect-ratio:1200/420;max-height:280px}
+/* Cap the hero image so the CTA stays near the fold on typical laptop
+   viewports. 1200:630 is the natural OG crop; we mask it to a slightly
+   shallower ratio (~89% of the height visible) rather than re-cropping the
+   asset. Keep cover text/subjects out of the top and bottom ~5% edges. */
+.hero-thumb{position:relative;background:#0e0e13;overflow:hidden;aspect-ratio:1200/560;max-height:360px}
 .hero-thumb picture,.hero-thumb img{display:block;width:100%;height:100%;object-fit:cover}
 .hero-body{padding:20px 28px 22px}
 .hero-eyebrow{

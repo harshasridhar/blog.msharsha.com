@@ -475,7 +475,7 @@ def main():
         "@id": f"{SITE}/",
         "url": f"{SITE}/",
         "name": "Harsha Sridhar — Blog",
-        "description": "Essays on distributed systems, agentic AI, and engineering by Harsha Sridhar (MS Harsha), Senior Software Engineer at Roku.",
+        "description": "Deep dives on software, agentic AI, and distributed systems for working engineers: what's new, why it matters, and how to use it.",
         "author": {"@type": "Person", "name": "Harsha Sridhar",
                    "alternateName": "MS Harsha", "url": "https://msharsha.com"},
         "publisher": {"@type": "Person", "name": "Harsha Sridhar",
@@ -801,13 +801,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>(function(){try{var s=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',(s==='light'||s==='dark')?s:(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));}catch(e){}})();</script>
 <title>Blog — Harsha Sridhar</title>
-<meta name="description" content="Essays on distributed systems, agentic AI, and engineering by Harsha Sridhar (MS Harsha), Senior Software Engineer at Roku.">
+<meta name="description" content="Deep dives on software, agentic AI, and distributed systems for working engineers: what's new, why it matters, and how to use it.">
 <link rel="canonical" href="https://blog.msharsha.com/">
 <meta name="author" content="Harsha Sridhar">
 <meta name="copyright" content="© 2026 Harsha Sridhar. All rights reserved.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Blog — Harsha Sridhar">
-<meta property="og:description" content="Essays on distributed systems, agentic AI, and engineering.">
+<meta property="og:description" content="Deep dives on software, agentic AI, and distributed systems, for working engineers.">
 <meta property="og:url" content="https://blog.msharsha.com/">
 <meta property="og:image" content="https://msharsha.com/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -835,7 +835,7 @@ if(!/^(localhost|127\\.0\\.0\\.1|::1|\\[::1\\])$/.test(location.hostname)&&locat
   <div class="masthead">
     <p class="eyebrow">Field notes</p>
     <h1>The universe is a distributed system with no documentation.</h1>
-    <p>Essays on software, agentic AI, and the physics of scale — from an engineer who keeps asking why.</p>
+    <p>Deep dives on software, agentic AI, and the physics of scale — from an engineer who keeps asking why.</p>
   </div>
 
   <div class="home">
@@ -863,7 +863,7 @@ FEED_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
   <channel>
     <title>Harsha Sridhar — Blog</title>
     <link>https://blog.msharsha.com/</link>
-    <description>Essays on distributed systems, agentic AI, and engineering.</description>
+    <description>Deep dives on software, agentic AI, and distributed systems, for working engineers.</description>
     <language>en-us</language>
     <atom:link href="https://blog.msharsha.com/feed.xml" rel="self" type="application/rss+xml"/>
     <image>
